@@ -78,9 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
     checkApiKeyStatus();
 
     function checkApiKeyStatus() {
-        // APIキーが未入力の場合は警告バーを表示し、入力されている場合は隠します
+        // APIキーが端末に未保存でも、サーバー側(Render環境変数)で設定済みなら注意帯を表示しません
         const key = getStoredApiKey();
-        if (!key) {
+        const metaTag = document.querySelector('meta[name="has-server-key"]');
+        const hasServerKey = metaTag && metaTag.getAttribute('content') === 'true';
+        if (!key && !hasServerKey) {
             apiReminder.classList.remove('hidden');
         } else {
             apiReminder.classList.add('hidden');

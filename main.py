@@ -83,7 +83,8 @@ def index():
     アプリのトップページにアクセスされたときに動く関数。
     templates/index.html 画面を表示（レンダリング）します。
     """
-    return render_template('index.html')
+    has_server_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    return render_template('index.html', has_server_key=has_server_key)
 
 @app.route('/manifest.json')
 def manifest():
