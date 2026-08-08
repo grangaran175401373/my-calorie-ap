@@ -88,12 +88,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- 4. モーダル画面（設定ポップアップ）のイベント制御 ---
-    // APIキー設定ボタンをクリックしたとき
-    btnConfig.addEventListener('click', () => {
+    // APIキー設定ボタンまたは注意帯をクリックしたとき
+    function openConfigModal() {
         apiKeyInput.value = getStoredApiKey();
         modelSelect.value = getStoredModel();
         configModal.classList.remove('hidden'); // モーダルを表示
-    });
+    }
+
+    btnConfig.addEventListener('click', openConfigModal);
+    if (apiReminder) {
+        apiReminder.style.cursor = 'pointer';
+        apiReminder.addEventListener('click', openConfigModal);
+    }
+
 
     // 設定画面の「×」ボタンをクリックしたとき
     btnCloseModal.addEventListener('click', () => {
