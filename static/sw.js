@@ -1,4 +1,4 @@
-const CACHE_NAME = 'nutrivision-v1';
+const CACHE_NAME = 'nutrivision-v2';
 const STATIC_ASSETS = [
   '/',
   '/static/style.css',
@@ -11,11 +11,12 @@ const STATIC_ASSETS = [
 
 // Service Worker Installation
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       console.log('[SW] Pre-caching static assets');
       return cache.addAll(STATIC_ASSETS);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
@@ -41,6 +42,20 @@ self.addEventListener('fetch', (event) => {
 
   // Skip API requests (/analyze, /chat) - network only
   if (url.pathname.startsWith('/analyze') || url.pathname.startsWith('/chat')) {
+    return;
+  }
+
+  // Network First for HTML and JS to ensure latest updates are immediately served
+  if (event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('.js')) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        }
+        return networkResponse;
+      }).catch(() => caches.match(event.request))
+    );
     return;
   }
 

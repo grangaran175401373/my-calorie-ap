@@ -42,7 +42,7 @@ def get_api_key(request):
     """
     APIキーを取得する関数。以下の優先順位でチェックします：
     1. 画面から送られてきたカスタムヘッダー（X-Gemini-API-Key）
-    2. サーバー内の環境変数（.env またはシステム環境変数の GEMINI_API_KEY）
+    2. サーバー内の環境変数（GEMINI_API_KEY, GOOGLE_API_KEY, API_KEY）
     """
     # 1. ブラウザから送られたヘッダーをチェック
     api_key = request.headers.get('X-Gemini-API-Key')
@@ -50,9 +50,10 @@ def get_api_key(request):
         return api_key.strip()
     
     # 2. サーバー側の環境変数をチェック
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if api_key and api_key.strip():
-        return api_key.strip()
+    for key_name in ["GEMINI_API_KEY", "GOOGLE_API_KEY", "API_KEY"]:
+        api_key = os.environ.get(key_name)
+        if api_key and api_key.strip():
+            return api_key.strip()
         
     return None
 
@@ -83,7 +84,7 @@ def index():
     アプリのトップページにアクセスされたときに動く関数。
     templates/index.html 画面を表示（レンダリング）します。
     """
-    has_server_key = bool(os.environ.get("GEMINI_API_KEY", "").strip())
+    has_server_key = any(bool(os.environ.get(k, "").strip()) for k in ["GEMINI_API_KEY", "GOOGLE_API_KEY", "API_KEY"])
     return render_template('index.html', has_server_key=has_server_key)
 
 @app.route('/manifest.json')
