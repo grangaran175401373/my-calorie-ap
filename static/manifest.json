@@ -1,0 +1,25 @@
+{
+  "name": "NutriVision AI - AIカロリー＆栄養素診断",
+  "short_name": "NutriVision",
+  "description": "AIが料理写真を自動認識してカロリーやたんぱく質、脂質、炭水化物を判定・診断する栄養管理アプリ",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

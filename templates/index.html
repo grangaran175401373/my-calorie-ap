@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Calorie & Nutrition Analyzer | AIカロリー＆栄養素診断</title>
+    <!-- PWA Meta Tags & Icons -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NutriVision">
+    <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Noto+Sans+JP:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Main Style -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Background Ambient Glows -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <div class="app-container">
+        <!-- Navigation Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-fire-flame-curved logo-icon"></i>
+                <div class="logo-text">
+                    <span class="logo-title">NutriVision AI</span>
+                    <span class="logo-subtitle">AI カロリー＆栄養素診断</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button id="btn-pwa-install" class="btn btn-primary btn-pwa hidden">
+                    <i class="fa-solid fa-download"></i> アプリ追加
+                </button>
+                <button id="btn-config" class="btn btn-secondary">
+                    <i class="fa-solid fa-key"></i> APIキー設定
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Grid -->
+        <main class="app-main">
+            <!-- Left Side: Upload & Input -->
+            <section class="section-left">
+                <div class="card upload-card">
+                    <h2 class="card-title"><i class="fa-solid fa-camera"></i> 料理の画像をアップロード</h2>
+                    <p class="card-desc">お食事の写真をドロップするか、ファイルを選択してください。</p>
+                    
+                    <div id="drop-zone" class="drop-zone">
+                        <input type="file" id="image-input" accept="image/*" class="file-input">
+                        <div class="drop-zone-content">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                            <p class="upload-text">ここに画像をドラッグ＆ドロップ</p>
+                            <span class="upload-or">または</span>
+                            <button type="button" class="btn btn-primary btn-browse">ファイルを選択</button>
+                        </div>
+                        <div id="preview-container" class="preview-container hidden">
+                            <img id="image-preview" src="" alt="料理のプレビュー">
+                            <button type="button" id="btn-remove-image" class="btn-remove"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+                    </div>
+
+                    <button id="btn-diagnose" class="btn btn-gradient btn-large btn-disabled" disabled>
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 診断する
+                    </button>
+                </div>
+
+                <!-- API Key Reminder (visible if not set in local storage and not configured) -->
+                <div id="api-reminder" class="api-reminder-box hidden">
+                    <div class="reminder-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                    <div class="reminder-text">
+                        <h4>APIキーが未設定です</h4>
+                        <p>右上部の「APIキー設定」からGemini APIキーを設定してください。キーはブラウザに安全に保存されます。</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Right Side: Results Dashboard (Hidden initially, shown after diagnostic) -->
+            <section class="section-right">
+                <!-- Welcome/Instruction screen -->
+                <div id="welcome-panel" class="card welcome-card">
+                    <div class="welcome-visual">
+                        <div class="visual-circle">
+                            <i class="fa-solid fa-apple-whole whole-icon"></i>
+                        </div>
+                    </div>
+                    <h2>画像から栄養素を瞬時に分析</h2>
+                    <p>画像をアップロードして「診断する」ボタンを押すと、AIが料理を自動認識し、カロリー、たんぱく質、脂質、炭水化物を計算します。</p>
+                </div>
+
+                <!-- Loading Panel -->
+                <div id="loading-panel" class="card loading-card hidden">
+                    <div class="spinner-container">
+                        <div class="gradient-spinner"></div>
+                        <i class="fa-solid fa-brain brain-spinner"></i>
+                    </div>
+                    <h3 id="loading-message">AIが画像を解析中...</h3>
+                    <p>料理の判定、分量の推定、カロリー計算を順次行っています。</p>
+                    <div class="progress-bar-container">
+                        <div class="loading-progress"></div>
+                    </div>
+                </div>
+
+                <!-- Diagnostic Results Panel -->
+                <div id="results-panel" class="results-container hidden">
+                    <!-- Basic Info Card -->
+                    <div class="card result-card">
+                        <div class="result-header">
+                            <div>
+                                <span class="result-badge">診断結果</span>
+                                <h2 id="result-dish-name" class="dish-title">カツカレー</h2>
+                            </div>
+                        </div>
+
+                        <!-- Macro Dashboard -->
+                        <div class="macro-dashboard">
+                            <!-- Circular Calorie Gauge -->
+                            <div class="calorie-gauge-wrapper">
+                                <div class="calorie-ring">
+                                    <svg class="ring-svg" viewBox="0 0 120 120">
+                                        <circle class="ring-bg" cx="60" cy="60" r="50"></circle>
+                                        <circle id="calorie-progress-ring" class="ring-bar" cx="60" cy="60" r="50"></circle>
+                                    </svg>
+                                    <div class="calorie-number-container">
+                                        <span id="result-calories" class="calorie-number">650</span>
+                                        <span class="calorie-unit">kcal</span>
+                                    </div>
+                                </div>
+                                <span class="gauge-label">推定エネルギー</span>
+                            </div>
+
+                            <!-- Macro Bars (Protein, Fat, Carbs) -->
+                            <div class="macro-bars-list">
+                                <!-- Protein -->
+                                <div class="macro-bar-item">
+                                    <div class="macro-info">
+                                        <span class="macro-name"><i class="fa-solid fa-egg"></i> たんぱく質 (P)</span>
+                                        <span class="macro-value"><strong id="result-protein">24.5</strong> g</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div id="bar-protein" class="bar-fill p-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <!-- Fat -->
+                                <div class="macro-bar-item">
+                                    <div class="macro-info">
+                                        <span class="macro-name"><i class="fa-solid fa-droplet"></i> 脂質 (F)</span>
+                                        <span class="macro-value"><strong id="result-fat">18.2</strong> g</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div id="bar-fat" class="bar-fill f-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                                <!-- Carbs -->
+                                <div class="macro-bar-item">
+                                    <div class="macro-info">
+                                        <span class="macro-name"><i class="fa-solid fa-wheat-awn"></i> 炭水化物 (C)</span>
+                                        <span class="macro-value"><strong id="result-carbs">85.0</strong> g</span>
+                                    </div>
+                                    <div class="bar-track">
+                                        <div id="bar-carbs" class="bar-fill c-fill" style="width: 0%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ingredients and Advice Split Grid -->
+                    <div class="results-subgrid">
+                        <!-- Ingredients Table Card -->
+                        <div class="card table-card">
+                            <h3 class="subcard-title"><i class="fa-solid fa-list-check"></i> 推定食材リスト</h3>
+                            <div class="table-wrapper">
+                                <table class="ingredients-table">
+                                    <thead>
+                                        <tr>
+                                            <th>食材</th>
+                                            <th>目安量</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="result-ingredients-body">
+                                        <!-- Dynamic Insert -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Advice Card -->
+                        <div class="card advice-card">
+                            <h3 class="subcard-title"><i class="fa-regular fa-comment-dots"></i> 管理栄養士AIのアドバイス</h3>
+                            <div class="advice-content">
+                                <p id="result-advice">
+                                    アドバイス内容がここに表示されます。
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dietitian Chat Box -->
+                    <div class="card chat-card">
+                        <div class="chat-header">
+                            <div class="chat-title-group">
+                                <div class="chat-avatar"><i class="fa-solid fa-user-doctor"></i></div>
+                                <div>
+                                    <h3>管理栄養士AIと相談チャット</h3>
+                                    <span>この料理に関する質問やアレンジの相談ができます</span>
+                                </div>
+                            </div>
+                            <button id="btn-clear-chat" class="btn-clear" title="チャット履歴をクリア">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        
+                        <div id="chat-messages" class="chat-messages">
+                            <div class="chat-message bot">
+                                この料理のカロリーや栄養バランスについて、気になることはありますか？<br>
+                                「糖質を減らす工夫は？」「代わりに使えるヘルシーな食材は？」など、何でも聞いてくださいね。
+                            </div>
+                        </div>
+
+                        <div class="chat-input-area">
+                            <input type="text" id="chat-input" placeholder="AI管理栄養士に質問する..." autocomplete="off">
+                            <button id="btn-send-chat" class="btn btn-gradient btn-icon">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- API Key Config Modal -->
+    <div id="config-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-gears"></i> Gemini APIキーの設定</h3>
+                <button id="btn-close-modal" class="btn-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>本アプリはGoogleの生成AI「Gemini」を用いて画像の解析を行っています。ご利用にはAPIキーが必要です。</p>
+                
+                <div class="form-group">
+                    <label for="api-key-input">Gemini APIキー:</label>
+                    <div class="input-wrapper">
+                        <input type="password" id="api-key-input" placeholder="AIzaSy...">
+                        <button type="button" id="btn-toggle-key-visibility" class="btn-visibility">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <span class="form-hint">※APIキーはサーバーに永続保存されず、ブラウザのLocalStorage内に安全に保管されます。環境変数 <code>GEMINI_API_KEY</code> がサーバー側で設定されている場合は、この入力は省略できます。</span>
+                </div>
+
+                <div class="form-group">
+                    <label for="model-select">AIモデルの選択:</label>
+                    <div class="select-wrapper">
+                        <select id="model-select" class="form-select">
+                            <option value="gemini-3.5-flash" selected>gemini-3.5-flash (標準・高速)</option>
+                            <option value="gemini-3.1-flash-lite">gemini-3.1-flash-lite (軽量・負荷回避用)</option>
+                            <option value="gemini-3.5-pro">gemini-3.5-pro (高精度・詳細分析)</option>
+                        </select>
+                    </div>
+                    <span class="form-hint">※一時的な混雑（503エラー）が発生した場合は、<code>gemini-3.1-flash-lite</code> に切り替えて試すと成功することがあります。</span>
+                </div>
+
+                <div class="api-help-box">
+                    <h5><i class="fa-solid fa-circle-info"></i> APIキーの取得方法</h5>
+                    <ol>
+                        <li><a href="https://aistudio.google.com/" target="_blank" rel="noopener">Google AI Studio <i class="fa-solid fa-up-right-from-square"></i></a>にアクセスします。</li>
+                        <li>Googleアカウントでログインし、<strong>「Get API Key」</strong>をクリックします。</li>
+                        <li>新しいプロジェクトでAPIキーを作成し、コピーしてここに貼り付けてください。</li>
+                    </ol>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-delete-key" class="btn btn-danger">キーを削除</button>
+                <button id="btn-save-key" class="btn btn-gradient">保存する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Logic -->
+    <script src="/static/script.js"></script>
+</body>
+</html>
